@@ -1,8 +1,21 @@
 from flask import Flask, request, jsonify
 import sqlite3
+from dotenv import load_dotenv
+import os
+import jwt
+import datetime
+
+# Cargar .env desde la raíz del proyecto (una carpeta arriba de esta)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+ENV_PATH = os.path.join(BASE_DIR, '.env')
+load_dotenv(ENV_PATH)
 
 app = Flask(__name__)
 DB_FILE = 'auth.db'
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("No se encontró la SECRET_KEY en las variables de entorno")
 
 # Crear tabla si no existe
 def init_db():
@@ -51,7 +64,7 @@ def register():
         conn.close()
         return jsonify({"error": "El nombre de usuario ya existe"}), 409
 
-# Ruta: Login
+# Ruta: Login con token JWT de 5 minutos
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -68,13 +81,18 @@ def login():
     conn.close()
 
     if row and row[1] == data['password']:
+        payload = {
+            'user_id': row[0],
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=5)
+        }
+        token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+
         return jsonify({
             "mensaje": "Login exitoso",
-            "token": f"token_{row[0]}"
+            "token": token
         }), 200
 
     return jsonify({"error": "Credenciales inválidas"}), 401
 
-# Iniciar servidor
 if __name__ == '__main__':
     app.run(port=5001, debug=True)

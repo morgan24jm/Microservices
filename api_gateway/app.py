@@ -42,19 +42,23 @@ def user_proxy(path):
     )
     return jsonify(resp.json()), resp.status_code
 
-@app.route('/task/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def task_proxy(path):
-    url = f"{TASK_SERVICE_URL}/{path}"
-    
+@app.route('/tasks', methods=['GET', 'POST'])
+@app.route('/tasks/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def task_proxy(path=None):
+    url = f"{TASK_SERVICE_URL}/tasks"
+    if path:
+        url += f"/{path}"
+
     headers = {key: value for key, value in request.headers if key != 'Host'}
-    
+
     resp = requests.request(
         method=request.method,
         url=url,
-        json=request.get_json(),
+        json=request.get_json(silent=True),
         headers=headers
     )
     return jsonify(resp.json()), resp.status_code
+
 
 
 if __name__ == '__main__':

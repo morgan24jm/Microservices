@@ -27,6 +27,25 @@ pip install -r requirements.txt
 ./stop_services.sh.
 ```
 
+#
+
+## Configuración del archivo `.env`
+
+Para que los microservicios funcionen correctamente, crea un archivo `.env` en la raíz del proyecto con la siguiente variable:
+
+```
+SECRET_KEY=tu_clave_secreta_para_jwt
+DEBUG=True
+```
+
+- Esta clave se usa para firmar y validar los tokens JWT.
+- No subas este archivo a repositorios públicos.
+- Puedes generar una clave secreta segura con:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
  ## Observaciones
 - Asegúrate de tener permisos de ejecución en los scripts ```(chmod +x start_services.sh stop_services.sh)```.
 
