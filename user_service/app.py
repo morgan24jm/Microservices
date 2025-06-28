@@ -36,7 +36,7 @@ def get_users():
             "id": row[0],
             "username": row[1],
             "email": row[2],
-            "password": row[3]  # ⚠️ Solo para pruebas. Normalmente no se devuelve el password.
+            "password": row[3]  
         })
 
     return jsonify({"users": users})
