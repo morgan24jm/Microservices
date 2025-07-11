@@ -5,13 +5,16 @@ import jwt
 import os
 from functools import wraps
 from dotenv import load_dotenv
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 # Cargar .env desde la raíz del proyecto (una carpeta arriba de esta)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 load_dotenv(ENV_PATH)
 
-app = Flask(__name__)
 DB_FILE = 'tasks.db'
 
 SECRET_KEY = os.getenv('SECRET_KEY')

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import jwt
 import datetime
+from flask_cors import CORS  # <-- Importa flask_cors
 
 # Cargar .env desde la raíz del proyecto (una carpeta arriba de esta)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,6 +12,8 @@ ENV_PATH = os.path.join(BASE_DIR, '.env')
 load_dotenv(ENV_PATH)
 
 app = Flask(__name__)
+CORS(app)  # <-- Aquí habilitas CORS para toda la app
+
 DB_FILE = 'auth.db'
 
 SECRET_KEY = os.getenv('SECRET_KEY')
