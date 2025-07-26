@@ -10,13 +10,13 @@ import qrcode
 import io
 import base64
 
-# Cargar .env desde la raíz del proyecto (una carpeta arriba)
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ENV_PATH = os.path.join(BASE_DIR, '.env')
 load_dotenv(ENV_PATH)
 
 app = Flask(__name__)
-CORS(app)  # Habilitar CORS para toda la app
+CORS(app) 
 
 DB_FILE = 'auth.db'
 
@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("No se encontró la SECRET_KEY en las variables de entorno")
 
-# Crear tabla con otp_secret si no existe
+
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
