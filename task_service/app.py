@@ -6,9 +6,18 @@ import os
 from functools import wraps
 from dotenv import load_dotenv
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 CORS(app)
+
+# ==== Rate Limiting ====
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["60 per minute"]  # Límite global por IP
+)
 
 # Cargar .env desde la raíz del proyecto (una carpeta arriba de esta)
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -57,22 +66,24 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            current_user_id = data.get('user_id')
-            if not current_user_id:
-                return jsonify({'message': 'Token inválido: no contiene usuario'}), 401
+            current_username = data.get('username')
+            if not current_username:
+                return jsonify({'message': 'Token inválido: no contiene username'}), 401
 
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token expirado, por favor inicia sesión nuevamente'}), 401
         except jwt.InvalidTokenError as e:
             return jsonify({'message': 'Token inválido', 'error': str(e)}), 401
 
-        return f(current_user_id, *args, **kwargs)
+        return f(current_username, *args, **kwargs)
+
     return decorated
 
 # Ruta: Crear tarea (protegida)
 @app.route('/tasks', methods=['POST'])
 @token_required
-def create_task(current_user_id):
+@limiter.limit("5 per minute")  # Límite específico
+def create_task(current_username):
     data = request.get_json()
     description = data.get('description')
     deadline = data.get('deadline')
@@ -82,14 +93,14 @@ def create_task(current_user_id):
     if not description:
         return jsonify({"error": "Faltan campos requeridos"}), 400
 
-    created_at = datetime.utcnow().isoformat()
+    created_at = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO task (description, created_at, deadline, status, isalive, created_by)
         VALUES (?, ?, ?, ?, ?, ?)
-    ''', (description, created_at, deadline, status, isalive, current_user_id))
+    ''', (description, created_at, deadline, status, isalive, current_username))
     conn.commit()
     task_id = cursor.lastrowid
     conn.close()
@@ -99,10 +110,11 @@ def create_task(current_user_id):
 # Ruta: Listar tareas (protegida - solo las del usuario)
 @app.route('/tasks', methods=['GET'])
 @token_required
-def get_tasks(current_user_id):
+@limiter.limit("10 per minute")
+def get_tasks(current_username):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    cursor.execute('SELECT * FROM task WHERE created_by = ?', (current_user_id,))
+    cursor.execute('SELECT * FROM task WHERE created_by = ?', (current_username,))
     rows = cursor.fetchall()
     conn.close()
 
@@ -120,8 +132,9 @@ def get_tasks(current_user_id):
 
     return jsonify(tasks)
 
-# Ruta: Obtener una tarea (no protegida aún)
+# Ruta: Obtener una tarea
 @app.route('/tasks/<int:task_id>', methods=['GET'])
+@limiter.limit("15 per minute")
 def get_task(task_id):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -144,6 +157,7 @@ def get_task(task_id):
 
 # Ruta: Actualizar tarea
 @app.route('/tasks/<int:task_id>', methods=['PUT'])
+@limiter.limit("5 per minute")
 def update_task(task_id):
     data = request.get_json()
     conn = sqlite3.connect(DB_FILE)
@@ -169,6 +183,7 @@ def update_task(task_id):
 
 # Ruta: Eliminar tarea
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
+@limiter.limit("5 per minute")
 def delete_task(task_id):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()

@@ -1,8 +1,17 @@
 from flask import Flask, request, jsonify
 import sqlite3
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 DB_FILE = 'users.db'
+
+# Inicializar rate limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 # Inicializar DB y crear tabla si no existe
 def init_db():
@@ -12,7 +21,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
-            email TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL
         )
     ''')
@@ -23,6 +32,7 @@ init_db()
 
 # Ruta: Listar todos los usuarios
 @app.route('/users', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_users():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -43,6 +53,7 @@ def get_users():
 
 # Ruta: Obtener un usuario por ID
 @app.route('/users/<int:user_id>', methods=['GET'])
+@limiter.limit("10 per minute")
 def get_user(user_id):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
@@ -62,6 +73,7 @@ def get_user(user_id):
 
 # Ruta: Crear un nuevo usuario
 @app.route('/users', methods=['POST'])
+@limiter.limit("5 per minute")
 def create_user():
     data = request.get_json()
 
@@ -90,6 +102,7 @@ def create_user():
 
 # Ruta: Actualizar usuario
 @app.route('/users/<int:user_id>', methods=['PUT'])
+@limiter.limit("5 per minute")
 def update_user(user_id):
     data = request.get_json()
 
@@ -119,6 +132,7 @@ def update_user(user_id):
 
 # Ruta: Eliminar usuario
 @app.route('/users/<int:user_id>', methods=['DELETE'])
+@limiter.limit("5 per minute")
 def delete_user(user_id):
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()

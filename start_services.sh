@@ -33,6 +33,7 @@ check_port 5000
 check_port 5001
 check_port 5002
 check_port 5003
+check_port 5004
 
 # Función para iniciar un servicio en background con python del venv y guardar PID
 start_service() {
@@ -57,6 +58,7 @@ start_service "api_gateway" "api_gateway" 5000
 start_service "auth_service" "auth_service" 5001
 start_service "user_service" "user_service" 5002
 start_service "task_service" "task_service" 5003
+start_service "logs_service" "logs_service" 5004
 
 echo "Todos los servicios han sido iniciados."
 echo "Logs disponibles en $LOG_DIR"

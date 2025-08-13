@@ -6,7 +6,7 @@ PROJECT_DIR="${PWD}"
 LOG_DIR="${PROJECT_DIR}/logs"
 
 # Lista de servicios
-SERVICES=("api_gateway" "auth_service" "user_service" "task_service")
+SERVICES=("api_gateway" "auth_service" "user_service" "task_service" "logs_service")
 
 # Detenemos cada servicio
 for SERVICE in "${SERVICES[@]}"; do
